@@ -1,13 +1,17 @@
 #include "rp_common_headfile.h"
 #include "rp_device_usb_ecm.h"
 #include "rp_lwip.h"
-#include "mc_server.h"
 #include "server_display.h"
+#include "UCraft.h"
+
+/** @brief UCraft 运行标志（本移植不使用 CLI，故不会触发退出）。 */
+static uint8_t s_ucraft_cleanup;
 
 /**
  * @brief 应用入口。
  * @return 不会返回。
- * @note 初始化顺序：HAL -> 时钟 -> 板级外设 -> USB ECM -> lwIP -> 服务器。
+ * @note 初始化顺序：HAL -> 时钟 -> 板级外设 -> USB ECM -> lwIP -> 显示
+ *       -> UCraft 服务端（阻塞运行）。
  */
 int main(void)
 {
@@ -24,17 +28,11 @@ int main(void)
   (void)lcd_hw_init();
   (void)usb_ecm_init();
   (void)rp_lwip_init();
-  (void)mc_server_init();
   server_display_init();
 
-  while (1) {
-    rp_lwip_poll();
-    mc_server_poll();
-    server_display_poll();
+  (void)UCraftStart(&s_ucraft_cleanup);
 
-#if (BSP_ENABLE_IWDG != 0U)
-    iwdg_feed();
-#endif
+  while (1) {
   }
 }
 

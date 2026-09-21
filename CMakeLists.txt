@@ -169,6 +169,33 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # LCD 服务器信息显示
     ${CMAKE_SOURCE_DIR}/project/code/server_display.c
 )
+
+# ---------------------------------------------------------------------------
+# UCraft（MIT）：完整的轻量 Minecraft 服务端，直接复用其协议/世界/游戏代码，
+# 仅通过 wrapper_custom.h + ucraft_platform.c 适配到 lwIP 裸机。
+# ---------------------------------------------------------------------------
+set(UCFT_DIR ${CMAKE_SOURCE_DIR}/libraries/third_party/ucraft)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    ${UCFT_DIR}/src/blocks.c
+    ${UCFT_DIR}/src/c2s.c
+    ${UCFT_DIR}/src/game.c
+    ${UCFT_DIR}/src/log.c
+    ${UCFT_DIR}/src/player.c
+    ${UCFT_DIR}/src/s2c.c
+    ${UCFT_DIR}/src/socketio.c
+    ${UCFT_DIR}/src/storage.c
+    ${UCFT_DIR}/src/UCraft.c
+    ${UCFT_DIR}/src/util.c
+    ${UCFT_DIR}/src/world.c
+    ${CMAKE_SOURCE_DIR}/project/code/ucraft_platform.c
+)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    ${UCFT_DIR}/include/UCraft
+    ${UCFT_DIR}/include/3rdparty
+)
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+    CUSTOM_WRAPPER=1
+)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/net
     ${LWIP_DIR}/src/include
