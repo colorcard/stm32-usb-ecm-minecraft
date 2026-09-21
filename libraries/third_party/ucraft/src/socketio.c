@@ -570,7 +570,25 @@ void sendPrefixedEnd()
 
 void sendPlayPacketHeader(size_t id)
 {
-  if (id < S2C_PLAY_MAPPING_LEN)
+  /* 26.3(协议 777) 在 clientbound Play 中新增了三个包并插入到序列里：
+   *   ADD_TRANSIENT_BLOCK @0x25、POST_EFFECTS @0x53、SWING_ANIMATION @0x7B。
+   * 以 775/776 的 ID 为基准，>=0x25 +1、>=0x52 +2、>=0x79 +3。 */
+  if ((sendPacketVars.player != NULL) && (sendPacketVars.player->protocol >= 777))
+  {
+    if (id >= 0x79)
+    {
+      id += 3;
+    }
+    else if (id >= 0x52)
+    {
+      id += 2;
+    }
+    else if (id >= 0x25)
+    {
+      id += 1;
+    }
+  }
+  if (id < 0x90)
   {
     sendByte(id);
     return;
