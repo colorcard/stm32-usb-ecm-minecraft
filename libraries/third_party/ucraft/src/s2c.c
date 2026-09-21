@@ -941,18 +941,8 @@ void ConfigurationS2Cupdatetags()
   }
   sendDone();
 
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
-  sendByte(1);
-  sendString("timeline", -1);
-  sendByte(1);
-  sendString("in_overworld", -1);
-  sendByte(4);
-  sendByte(3);
-  sendByte(0);
-  sendByte(2);
-  sendByte(1);
-  sendDone();
+  /* 26.3 新增 timeline 注册表；未下发该注册表时，其标签会报 Missing registry，
+   * 故此处不再发送 timeline 标签。 */
 }
 void ConfigurationS2Cready()
 {
