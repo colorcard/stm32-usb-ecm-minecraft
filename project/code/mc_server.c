@@ -25,6 +25,8 @@
 #define MC_PROTO_CONFIG       764U
 /** @brief 26.2(776)+ 的 Login Success 追加 Session ID(UUID)。 */
 #define MC_PROTO_SESSION_ID   776U
+/** @brief 1.20.3(765)+ 数据包内文本组件由 JSON 改为 NBT。 */
+#define MC_PROTO_COMPONENT_NBT 765U
 /** @brief 配置阶段 clientbound Disconnect 的包 ID。 */
 #define MC_CFG_DISCONNECT_ID  0x02U
 /** @brief 登录阶段 serverbound Login Acknowledged 的包 ID。 */
@@ -270,21 +272,49 @@ static void mc_send_login_success(mc_conn_t *c, const char *name)
 }
 
 /**
+ * @brief 编码一个 NBT 文本组件 {"text": "..."}（网络 NBT，大端）。
+ * @return 写入字节数。
+ */
+static int mc_nbt_put_text(uint8_t *out, const char *text)
+{
+  uint16_t n = (uint16_t)strlen(text);
+  int o = 0;
+
+  out[o++] = 0x0AU;                     /* TAG_Compound */
+  out[o++] = 0x00U;
+  out[o++] = 0x00U;                     /* 根节点名为空 */
+  out[o++] = 0x08U;                     /* TAG_String */
+  out[o++] = 0x00U;
+  out[o++] = 0x04U;                     /* 键名长度 = 4 */
+  out[o++] = 't';
+  out[o++] = 'e';
+  out[o++] = 'x';
+  out[o++] = 't';
+  out[o++] = (uint8_t)(n >> 8);
+  out[o++] = (uint8_t)(n & 0xFFU);
+  (void)memcpy(&out[o], text, n);
+  o += (int)n;
+  out[o++] = 0x00U;                     /* TAG_End */
+  return o;
+}
+
+/**
  * @brief 在配置阶段发送 Disconnect（优雅提示，随后关闭连接）。
+ * @note 1.20.3(765)+ 的 Reason 为 NBT 文本组件，之前为 JSON 字符串。
  */
 static void mc_send_config_disconnect(mc_conn_t *c, const char *text)
 {
-  uint8_t out[192];
-  char json[160];
-  int jl;
+  uint8_t out[256];
   int o = 0;
 
-  jl = snprintf(json, sizeof(json), "{\"text\":\"%s\"}", text);
-  if (jl <= 0) {
-    return;
-  }
   out[o++] = MC_CFG_DISCONNECT_ID;
-  o += mc_put_string(&out[o], json);
+  if (c->protocol >= MC_PROTO_COMPONENT_NBT) {
+    o += mc_nbt_put_text(&out[o], text);
+  } else {
+    char json[160];
+    (void)snprintf(json, sizeof(json), "{\"text\":\"%s\"}", text);
+    o += mc_put_string(&out[o], json);
+  }
   mc_send(c, out, (uint16_t)o);
 }
 
