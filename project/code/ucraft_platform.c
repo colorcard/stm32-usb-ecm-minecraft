@@ -243,6 +243,56 @@ char *U_inet_ntoa(struct in_addr in)
   return s;
 }
 
+/** @brief 环形缓冲中可用字节数。 */
+static uint16_t uc_ring_len(const uc_conn_t *c)
+{
+  return (uint16_t)((c->head + UC_RX_SIZE - c->tail) % UC_RX_SIZE);
+}
+
+static uint8_t uc_ring_at(const uc_conn_t *c, uint16_t idx)
+{
+  return c->rx[(uint16_t)((c->tail + idx) % UC_RX_SIZE)];
+}
+
+/**
+ * @brief 判断队首是否已攒够一个完整 Minecraft 包（VarInt 长度 + 负载）。
+ * @return 1 且 *pkt_total 为整包字节数；否则 0。
+ */
+static int uc_packet_complete(const uc_conn_t *c, uint16_t *pkt_total)
+{
+  uint16_t avail = uc_ring_len(c);
+  uint32_t len = 0U;
+  uint32_t shift = 0U;
+  uint16_t i;
+
+  if (avail == 0U) {
+    return 0;
+  }
+  for (i = 0U; i < 5U; ++i) {
+    uint8_t b;
+    if (i >= avail) {
+      return 0;
+    }
+    b = uc_ring_at(c, i);
+    len |= (uint32_t)(b & 0x7FU) << shift;
+    if ((b & 0x80U) == 0U) {
+      break;
+    }
+    shift += 7U;
+  }
+  if (i == 5U) {
+    return 0;
+  }
+  {
+    uint32_t total = (uint32_t)(i + 1U) + len;
+    if ((total == 0U) || (total > UC_RX_SIZE) || (avail < total)) {
+      return 0;
+    }
+    *pkt_total = (uint16_t)total;
+  }
+  return 1;
+}
+
 ssize_t U_recv(int fd, void *buf, size_t len, int flags)
 {
   uc_conn_t *c;
@@ -257,9 +307,20 @@ ssize_t U_recv(int fd, void *buf, size_t len, int flags)
   if (c->used == 0U) {
     return 0;
   }
-  while ((n < len) && (c->tail != c->head)) {
-    out[n++] = c->rx[c->tail];
-    c->tail = (uint16_t)((c->tail + 1U) % UC_RX_SIZE);
+  /* 只投递完整的 Minecraft 包，避免把包切在中间导致解析错位。 */
+  for (;;) {
+    uint16_t tot;
+    uint16_t k;
+    if (uc_packet_complete(c, &tot) == 0) {
+      break;
+    }
+    if (n + tot > len) {
+      break;
+    }
+    for (k = 0U; k < tot; ++k) {
+      out[n++] = uc_ring_at(c, 0U);
+      c->tail = (uint16_t)((c->tail + 1U) % UC_RX_SIZE);
+    }
   }
   if ((n == 0U) && (c->closed != 0U)) {
     return 0;
@@ -359,8 +420,9 @@ int U_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
     ready++;
   }
   for (i = 0U; i < UC_MAX_CONN; ++i) {
+    uint16_t tot;
     if ((s_conn[i].used != 0U) &&
-        ((s_conn[i].head != s_conn[i].tail) || (s_conn[i].closed != 0U))) {
+        ((s_conn[i].closed != 0U) || (uc_packet_complete(&s_conn[i], &tot) != 0))) {
       FD_SET((int)(i + 1U), readfds);
       ready++;
     }
