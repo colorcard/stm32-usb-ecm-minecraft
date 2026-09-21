@@ -19,6 +19,7 @@
 
 int server_fd = -1;
 size_t main_tick = 0;
+volatile int uc_stage;
 
 
 static void c2sHandler(readPacketVars_t *readPacketValue)
@@ -261,6 +262,12 @@ static void s2cHandler()
             currentPlayer->logged_on = 1;
             currentPlayer->spawn_event = 0;
         }
+        if (currentPlayer->configuration_event)
+        {
+            ConfigurationS2Cfeatures();
+            ConfigurationS2Cknownpacks();
+            currentPlayer->configuration_event = 0;
+        }
         if (currentPlayer->configuration_known_packs_ack_event)
         {
             ConfigurationS2Cregistry();
@@ -269,12 +276,6 @@ static void s2cHandler()
             currentPlayer->global_buffer_start_index = sendGetGlobalBufferIndex();
             currentPlayer->ingame = 1;
             currentPlayer->configuration_known_packs_ack_event = 0;
-        }
-        if (currentPlayer->configuration_event)
-        {
-            ConfigurationS2Cfeatures();
-            ConfigurationS2Cknownpacks();
-            currentPlayer->configuration_event = 0;
         }
 #ifdef ONLINE_MODE
         if (currentPlayer->encryption_event)
@@ -534,18 +535,21 @@ int UCraftStart(uint8_t *cleanup_flag)
         return 1;
     }
 #endif /*ONLINE_MODE*/
+    uc_stage = 1;
     if ((server_fd = U_socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printl(LOG_ERROR, "Cannot create socket fd:%d\n", server_fd);
         UCraftCleanup();
         return 1;
     }
+    uc_stage = 2;
     if (U_setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
     {
         printl(LOG_ERROR, "setsockopt SOL_SOCKET error fd:%d\n", server_fd);
         UCraftCleanup();
         return 1;
     }
+    uc_stage = 3;
     if (U_setsockopt(server_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)))
     {
         printl(LOG_ERROR, "setsockopt IPPROTO_TCP error fd:%d\n", server_fd);
@@ -555,12 +559,14 @@ int UCraftStart(uint8_t *cleanup_flag)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
+    uc_stage = 4;
     if (U_bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
         printl(LOG_ERROR, "bind error fd:%d\n", server_fd);
         UCraftCleanup();
         return 1;
     }
+    uc_stage = 5;
     if (U_listen(server_fd, MAX_PLAYERS + 1) < 0)
     {
         printl(LOG_ERROR, "listen error fd:%d\n", server_fd);
@@ -574,6 +580,7 @@ int UCraftStart(uint8_t *cleanup_flag)
     timeout.tv_usec = 0;
 
     max_sock = server_fd;
+    uc_stage = 6;
     printl(LOG_INFO, "UCraft server started!\n");
     printl(LOG_INFO, "Supported client version: %s\n", CLIENT_VERSION);
     gamePreload();

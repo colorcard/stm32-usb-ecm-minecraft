@@ -90,8 +90,11 @@ void gamePlayerSpawned(player_t *currentPlayer)
 }
 
 // fired in local context
+volatile int uc_dbg_localtick;
+volatile int uc_dbg_chunk_calls;
 void gamePlayerLocalTick(player_t *currentPlayer)
 {
+    uc_dbg_localtick++;
     // chunk generation stuff
     if (currentPlayer->gamePlayerData.chunk_load_event)
     {
@@ -102,7 +105,8 @@ void gamePlayerLocalTick(player_t *currentPlayer)
             {
                 int32_t chunk_x = currentPlayer->gamePlayerData.chunk_x + (currentPlayer->chunk_px * VIEWDISTANCE);
                 int32_t chunk_z = currentPlayer->gamePlayerData.chunk_z + currentPlayer->gamePlayerData.chunk_lz;
-                PlayS2Cchunk(currentPlayer, chunk_x, chunk_z, 3, 7);
+                uc_dbg_chunk_calls++;
+            PlayS2Cchunk(currentPlayer, chunk_x, chunk_z, 3, 7);
                 if (currentPlayer->gamePlayerData.chunk_lz < VIEWDISTANCE)
                 {
                     currentPlayer->gamePlayerData.chunk_lz++;
@@ -117,7 +121,8 @@ void gamePlayerLocalTick(player_t *currentPlayer)
             {
                 int32_t chunk_x = currentPlayer->gamePlayerData.chunk_x + currentPlayer->gamePlayerData.chunk_lx;
                 int32_t chunk_z = currentPlayer->gamePlayerData.chunk_z + (currentPlayer->chunk_pz * VIEWDISTANCE);
-                PlayS2Cchunk(currentPlayer, chunk_x, chunk_z, 3, 7);
+                uc_dbg_chunk_calls++;
+            PlayS2Cchunk(currentPlayer, chunk_x, chunk_z, 3, 7);
                 if (currentPlayer->gamePlayerData.chunk_lx < VIEWDISTANCE)
                 {
                     currentPlayer->gamePlayerData.chunk_lx++;
@@ -136,6 +141,7 @@ void gamePlayerLocalTick(player_t *currentPlayer)
         else
         {
             // full square load
+            uc_dbg_chunk_calls++;
             PlayS2Cchunk(currentPlayer, currentPlayer->gamePlayerData.chunk_lx + currentPlayer->gamePlayerData.chunk_x,
                          currentPlayer->gamePlayerData.chunk_lz + currentPlayer->gamePlayerData.chunk_z,
                          3, 7);

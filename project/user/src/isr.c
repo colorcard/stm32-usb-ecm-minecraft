@@ -2,6 +2,11 @@
 #include "rp_common_fault.h"
 #include "rp_device_usb_ecm.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
+extern void xPortSysTickHandler(void);
+
 /******************************************************************************/
 /*                       Cortex-M4 处理器异常处理                              */
 /******************************************************************************/
@@ -72,21 +77,20 @@ __attribute__((naked)) void UsageFault_Handler(void)
     "b fault_handler_c \n");
 }
 
-void SVC_Handler(void)
-{
-}
-
+/* SVC_Handler / PendSV_Handler 由 FreeRTOS 移植提供（见 FreeRTOSConfig.h 向量映射）。 */
 void DebugMon_Handler(void)
 {
 }
 
-void PendSV_Handler(void)
-{
-}
-
+/**
+ * @brief SysTick：调度器未启动时仅维护 HAL 毫秒计数；启动后驱动 FreeRTOS tick。
+ */
 void SysTick_Handler(void)
 {
   HAL_IncTick();
+  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+    xPortSysTickHandler();
+  }
 }
 
 /******************************************************************************/

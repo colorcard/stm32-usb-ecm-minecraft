@@ -10,6 +10,7 @@
 
 #include "lwip/init.h"
 #include "lwip/ip_addr.h"
+#include "lwip/tcpip.h"
 #include "lwip/timeouts.h"
 
 #include "rp_common_headfile.h"
@@ -39,13 +40,8 @@ void rp_lwip_assert_failed(const char *msg, const char *file, int line)
 }
 
 /**
- * @brief lwIP 毫秒时间基准。
- * @return 自系统启动以来的毫秒数。
+ * @brief lwIP 毫秒时间基准由 sys_arch.c 提供（FreeRTOS tick）。
  */
-uint32_t sys_now(void)
-{
-  return HAL_GetTick();
-}
 
 /** @brief 用芯片 UID 初始化伪随机种子（lwIP 端口选择等）。 */
 static void seed_rand(void)
@@ -60,7 +56,7 @@ struct netif *rp_lwip_init(void)
   ip4_addr_t mask;
 
   seed_rand();
-  lwip_init();
+  tcpip_init(NULL, NULL);
 
   if (rp_netif_ecm_add(&s_netif) != 0) {
     return NULL;
@@ -82,7 +78,6 @@ void rp_lwip_poll(void)
 {
   usb_ecm_poll();
   rp_netif_ecm_poll();
-  sys_check_timeouts();
 }
 
 struct netif *rp_lwip_netif(void)

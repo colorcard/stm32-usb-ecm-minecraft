@@ -8,13 +8,34 @@
 /* ------------------------------------------------------------------ */
 /* 运行模式：裸机主循环轮询，无 RTOS。 */
 /* ------------------------------------------------------------------ */
-#define NO_SYS                      1
+#define NO_SYS                      0
 #define SYS_LIGHTWEIGHT_PROT        0
-#define LWIP_NETCONN                0
-#define LWIP_SOCKET                 0
+#define LWIP_NETCONN                1
+#define LWIP_SOCKET                 1
+#define LWIP_COMPAT_SOCKETS         0
+#define LWIP_POSIX_SOCKETS_IO_NAMES 0
+#define LWIP_SO_RCVTIMEO            1
+#define LWIP_SO_SNDTIMEO            1
 #define LWIP_TCPIP_CORE_LOCKING     0
+#define LWIP_TCPIP_CORE_LOCKING_INPUT 0
 #define LWIP_TIMERS                 1
 #define LWIP_TIMERS_CUSTOM          0
+
+/* FreeRTOS 线程配置 */
+#define TCPIP_THREAD_NAME           "tcpip"
+#define TCPIP_THREAD_STACKSIZE      1024
+#define TCPIP_THREAD_PRIO           3
+#define TCPIP_MBOX_SIZE             16
+#define DEFAULT_THREAD_STACKSIZE    1024
+#define DEFAULT_THREAD_PRIO         2
+#define DEFAULT_RAW_RECVMBOX_SIZE   8
+#define DEFAULT_UDP_RECVMBOX_SIZE   8
+#define DEFAULT_TCP_RECVMBOX_SIZE   8
+#define DEFAULT_ACCEPTMBOX_SIZE     4
+#define MEMP_NUM_NETCONN            4
+#define MEMP_NUM_NETBUF             4
+#define MEMP_NUM_TCPIP_MSG_API      16
+#define MEMP_NUM_TCPIP_MSG_INPKT    16
 
 /* ------------------------------------------------------------------ */
 /* 协议族：只启 IPv4。 */
@@ -55,7 +76,7 @@
 #define MEMP_NUM_REASSDATA          0
 #define MEMP_NUM_FRAG_PBUF          0
 #define MEMP_NUM_ARP_QUEUE          8
-#define MEMP_NUM_SYS_TIMEOUT        8
+#define MEMP_NUM_SYS_TIMEOUT        16
 
 #define PBUF_POOL_SIZE              8
 #define PBUF_POOL_BUFSIZE           1536
@@ -106,5 +127,10 @@
 #define LWIP_MULTICAST_TX_OPTIONS   0
 #define LWIP_BROADCAST_PING         1
 #define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS 0
+#define LWIP_NETIF_API              0
+#define LWIP_SOCKET_SELECT          1
+#define SO_REUSE                    1
+#define LWIP_TIMEVAL_PRIVATE        0
+#define LWIP_ERRNO_STDINCLUDE       1
 
 #endif /* LWIP_LWIPOPTS_H */

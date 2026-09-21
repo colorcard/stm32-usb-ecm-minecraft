@@ -4,18 +4,57 @@
 #include "server_display.h"
 #include "UCraft.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 /** @brief UCraft 运行标志（本移植不使用 CLI，故不会触发退出）。 */
 static uint8_t s_ucraft_cleanup;
+
+/** @brief 网络任务：驱动 USB-ECM 收帧并喂给 lwIP。 */
+static void task_net(void *arg)
+{
+  (void)arg;
+  for (;;) {
+    rp_lwip_poll();
+#if (BSP_ENABLE_IWDG != 0U)
+    iwdg_feed();
+#endif
+    vTaskDelay(pdMS_TO_TICKS(1));
+  }
+}
+
+/** @brief 显示任务：低频刷新 LCD 服务器信息。 */
+static void task_display(void *arg)
+{
+  (void)arg;
+  for (;;) {
+    server_display_poll();
+    vTaskDelay(pdMS_TO_TICKS(200));
+  }
+}
+
+/** @brief 调试：UCraft 任务是否进入、UCraftStart 返回时的阶段。 */
+volatile int uc_dbg_task_entered;
+volatile int uc_dbg_ucraft_returned;
+
+/** @brief UCraft 服务端任务：阻塞在其自身的 socket 循环中。 */
+static void task_ucraft(void *arg)
+{
+  (void)arg;
+  uc_dbg_task_entered = 1;
+  (void)UCraftStart(&s_ucraft_cleanup);
+  uc_dbg_ucraft_returned = 1;
+  for (;;) {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+  }
+}
 
 /**
  * @brief 应用入口。
  * @return 不会返回。
- * @note 初始化顺序：HAL -> 时钟 -> 板级外设 -> USB ECM -> lwIP -> 显示
- *       -> UCraft 服务端（阻塞运行）。
  */
 int main(void)
 {
-  /* 让总线错误精确上报，便于定位非法访问。 */
   (*(volatile uint32_t *)0xE000E008UL) |= (1UL << 1U);
 
   HAL_Init();
@@ -30,19 +69,23 @@ int main(void)
   (void)rp_lwip_init();
   server_display_init();
 
-  (void)UCraftStart(&s_ucraft_cleanup);
+  (void)xTaskCreate(task_net, "net", 512U, NULL, 2U, NULL);
+  (void)xTaskCreate(task_display, "disp", 512U, NULL, 1U, NULL);
+  (void)xTaskCreate(task_ucraft, "ucraft", 2048U, NULL, 3U, NULL);
+
+  vTaskStartScheduler();
 
   while (1) {
   }
 }
 
+/** @brief FreeRTOS 内存分配失败钩子。 */
+void vApplicationMallocFailedHook(void)
+{
+  error_handler();
+}
+
 #ifdef USE_FULL_ASSERT
-/**
- * @brief 参数断言失败处理。
- * @param file 源文件名。
- * @param line 出错行号。
- * @return 无。
- */
 void assert_failed(uint8_t *file, uint32_t line)
 {
   (void)file;

@@ -175,6 +175,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # 仅通过 wrapper_custom.h + ucraft_platform.c 适配到 lwIP 裸机。
 # ---------------------------------------------------------------------------
 set(UCFT_DIR ${CMAKE_SOURCE_DIR}/libraries/third_party/ucraft)
+set(FRTOS_DIR ${CMAKE_SOURCE_DIR}/libraries/third_party/freertos)
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${UCFT_DIR}/src/blocks.c
     ${UCFT_DIR}/src/c2s.c
@@ -187,11 +188,38 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${UCFT_DIR}/src/UCraft.c
     ${UCFT_DIR}/src/util.c
     ${UCFT_DIR}/src/world.c
-    ${CMAKE_SOURCE_DIR}/project/code/ucraft_platform.c
+
+    # lwIP socket/netconn API（UCraft 用 BSD socket）
+    ${LWIP_DIR}/src/api/api_lib.c
+    ${LWIP_DIR}/src/api/api_msg.c
+    ${LWIP_DIR}/src/api/err.c
+    ${LWIP_DIR}/src/api/if_api.c
+    ${LWIP_DIR}/src/api/netbuf.c
+    ${LWIP_DIR}/src/api/netdb.c
+    ${LWIP_DIR}/src/api/netifapi.c
+    ${LWIP_DIR}/src/api/sockets.c
+    ${LWIP_DIR}/src/api/tcpip.c
+    ${CMAKE_SOURCE_DIR}/libraries/net/sys_arch.c
+
+    # FreeRTOS 内核
+    ${FRTOS_DIR}/tasks.c
+    ${FRTOS_DIR}/queue.c
+    ${FRTOS_DIR}/list.c
+    ${FRTOS_DIR}/timers.c
+    ${FRTOS_DIR}/event_groups.c
+    ${FRTOS_DIR}/stream_buffer.c
+    ${FRTOS_DIR}/portable/GCC/ARM_CM4F/port.c
+    ${FRTOS_DIR}/portable/MemMang/heap_4.c
 )
+# lwIP 的 sockets.c 需要系统 struct timeval（LWIP_TIMEVAL_PRIVATE=0）。
+set_source_files_properties(${LWIP_DIR}/src/api/sockets.c
+    PROPERTIES COMPILE_OPTIONS "-include;sys/time.h")
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${UCFT_DIR}/include/UCraft
     ${UCFT_DIR}/include/3rdparty
+    ${FRTOS_DIR}/include
+    ${FRTOS_DIR}
+    ${FRTOS_DIR}/portable/GCC/ARM_CM4F
 )
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     CUSTOM_WRAPPER=1

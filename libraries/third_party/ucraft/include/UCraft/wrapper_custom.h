@@ -2,21 +2,22 @@
 #define WRAPPER_CUSTOM_H
 
 /*
- * UCraft 平台适配层（STM32G474 + lwIP raw TCP）。
- *
- * 用很小的 fd 抽象把 UCraft 的 BSD socket 调用映射到 lwIP：
- *   - fd 0 固定为监听套接字；fd 1..N 为已接受的连接。
- *   - U_select() 内部驱动 lwIP，并把“有数据/有新连接”的 fd 置位。
- * 具体实现在 project/code/ucraft_platform.c。
+ * UCraft 平台适配层（STM32G474 + lwIP socket API + FreeRTOS），对齐 UCraft-bl602。
+ * 直接用 lwIP 的 BSD socket 接口，UCraft 的 socket/select 主循环无需改动。
  */
 
-#include <errno.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
-#include <sys/time.h>
-#include <sys/types.h>
+#include <errno.h>
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
 
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
@@ -28,83 +29,144 @@
 #define EWOULDBLOCK EAGAIN
 #endif
 
-/* ------- 最小 socket 类型/常量（UCraft 仅用到少量） ------- */
-typedef unsigned int socklen_t;
-
-struct in_addr
-{
-  uint32_t s_addr;
-};
-
-struct sockaddr
-{
-  unsigned short sa_family;
-  char sa_data[14];
-};
-
-struct sockaddr_in
-{
-  unsigned short sin_family;
-  unsigned short sin_port;
-  struct in_addr sin_addr;
-  char sin_zero[8];
-};
-
-#define AF_INET 2
-#define SOCK_STREAM 1
-#define SOL_SOCKET 1
-#define SO_REUSEADDR 2
-#define IPPROTO_TCP 6
-#define TCP_NODELAY 1
-#define INADDR_ANY 0U
-
-static inline uint16_t U_htons(uint16_t x)
-{
-  return (uint16_t)((x >> 8) | (x << 8));
-}
-#ifndef htons
-#define htons(x) U_htons((uint16_t)(x))
-#endif
-#ifndef ntohs
-#define ntohs(x) U_htons((uint16_t)(x))
-#endif
-
-/* ------- fd_set 使用 newlib <sys/select.h> 的定义 ------- */
-
 /* ------- 时间/杂项 ------- */
-void U_wrapperStart(void);
-void U_wrapperEnd(void);
-void U_sleep(int msec);
-uint64_t U_millis(void);
+static inline void U_wrapperStart(void) {}
+static inline void U_wrapperEnd(void) {}
 
-/* ------- 网络 ------- */
-int U_socket(int domain, int type, int protocol);
-int U_setsockopt(int fd, int level, int optname, const void *optval,
-                 socklen_t optlen);
-int U_setsocknonblock(int fd);
-int U_bind(int fd, const struct sockaddr *addr, socklen_t addrlen);
-int U_listen(int fd, int backlog);
-int U_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-             struct timeval *timeout);
-int U_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
-int U_getpeername(int fd, struct sockaddr *addr, socklen_t *addrlen);
-char *U_inet_ntoa(struct in_addr in);
-ssize_t U_recv(int fd, void *buf, size_t len, int flags);
-ssize_t U_send(int fd, const void *buf, size_t len, int flags);
-int U_close(int fd);
-int U_shutdown(int fd, int how);
+static inline void U_sleep(int msec)
+{
+  vTaskDelay(pdMS_TO_TICKS((TickType_t)msec));
+}
 
-/* ------- 内存 ------- */
-void *U_malloc(size_t size);
-void *U_calloc(size_t nmemb, size_t size);
-void *U_realloc(void *ptr, size_t size);
-void U_free(void *ptr);
+static inline uint64_t U_millis(void)
+{
+  return (uint64_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+}
 
-/* 供平台层在 lwIP 回调中投递连接/数据。 */
-void ucPlatformOnAccept(int fd);
-void ucPlatformOnData(int fd, const uint8_t *data, uint16_t len);
-void ucPlatformOnClose(int fd);
-int ucPlatformInit(void);
-void ucPlatformPoll(void);
+/* ------- 网络（直接复用 lwIP socket API） ------- */
+static inline int U_socket(int domain, int type, int protocol)
+{
+  return lwip_socket(domain, type, protocol);
+}
+
+static inline int U_setsockopt(int sockfd, int level, int optname,
+                               const void *optval, socklen_t optlen)
+{
+  return lwip_setsockopt(sockfd, level, optname, optval, optlen);
+}
+
+static inline int U_setsocknonblock(int sockfd)
+{
+  return lwip_fcntl(sockfd, F_SETFL, O_NONBLOCK);
+}
+
+static inline int U_bind(int sockfd, const struct sockaddr *addr,
+                         socklen_t addrlen)
+{
+  return lwip_bind(sockfd, addr, addrlen);
+}
+
+static inline int U_listen(int sockfd, int backlog)
+{
+  return lwip_listen(sockfd, backlog);
+}
+
+static inline int U_select(int nfds, fd_set *readfds, fd_set *writefds,
+                           fd_set *exceptfds, struct timeval *timeout)
+{
+  return lwip_select(nfds, readfds, writefds, exceptfds, timeout);
+}
+
+static inline int U_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+{
+  return lwip_accept(sockfd, addr, addrlen);
+}
+
+static inline int U_getpeername(int sockfd, struct sockaddr *addr,
+                                socklen_t *addrlen)
+{
+  return lwip_getpeername(sockfd, addr, addrlen);
+}
+
+static inline char *U_inet_ntoa(struct in_addr in)
+{
+  return ip4addr_ntoa((const ip4_addr_t *)&in);
+}
+
+static inline ssize_t U_recv(int sockfd, void *buf, size_t len, int flags)
+{
+  return lwip_recv(sockfd, buf, len, flags);
+}
+
+static inline ssize_t U_send(int sockfd, const void *buf, size_t len, int flags)
+{
+  return lwip_send(sockfd, buf, len, flags);
+}
+
+static inline int U_connect(int sockfd, const struct sockaddr *addr,
+                            socklen_t addrlen)
+{
+  return lwip_connect(sockfd, addr, addrlen);
+}
+
+static inline int U_close(int fd)
+{
+  return lwip_close(fd);
+}
+
+static inline int U_shutdown(int sockfd, int how)
+{
+  return lwip_shutdown(sockfd, how);
+}
+
+/* ------- 内存（FreeRTOS 堆，带 8 字节对齐头以支持 realloc） ------- */
+#define UC_MEM_ALIGN 8U
+
+static inline void *U_malloc(size_t size)
+{
+  uint8_t *base = (uint8_t *)pvPortMalloc(size + UC_MEM_ALIGN);
+  if (base == NULL) {
+    return NULL;
+  }
+  *(size_t *)base = size;
+  return base + UC_MEM_ALIGN;
+}
+
+static inline void *U_calloc(size_t nmemb, size_t size)
+{
+  size_t total = nmemb * size;
+  void *p = U_malloc(total);
+  if (p != NULL) {
+    memset(p, 0, total);
+  }
+  return p;
+}
+
+static inline void U_free(void *ptr)
+{
+  if (ptr != NULL) {
+    vPortFree((uint8_t *)ptr - UC_MEM_ALIGN);
+  }
+}
+
+static inline void *U_realloc(void *ptr, size_t size)
+{
+  uint8_t *base;
+  size_t old;
+  void *np;
+
+  if (ptr == NULL) {
+    return U_malloc(size);
+  }
+  base = (uint8_t *)ptr - UC_MEM_ALIGN;
+  old = *(size_t *)base;
+  np = U_malloc(size);
+  if (np == NULL) {
+    return NULL;
+  }
+  memcpy(np, ptr, (old < size) ? old : size);
+  U_free(ptr);
+  return np;
+}
 
 #endif /* WRAPPER_CUSTOM_H */

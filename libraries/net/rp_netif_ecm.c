@@ -8,6 +8,7 @@
 
 #include "lwip/etharp.h"
 #include "lwip/pbuf.h"
+#include "lwip/tcpip.h"
 #include "netif/ethernet.h"
 
 #include "rp_common_headfile.h"
@@ -75,7 +76,7 @@ static err_t ecm_netif_init(struct netif *netif)
 int rp_netif_ecm_add(struct netif *netif)
 {
   if (netif_add(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY, NULL,
-                ecm_netif_init, ethernet_input) == NULL) {
+                ecm_netif_init, tcpip_input) == NULL) {
     return -1;
   }
   s_netif = netif;
