@@ -9,12 +9,16 @@
 /** @brief UCraft 运行标志（本移植不使用 CLI，故不会触发退出）。 */
 static uint8_t s_ucraft_cleanup;
 
+/** @brief net 任务心跳（调试）。 */
+volatile uint32_t net_poll_count;
+
 /** @brief 网络任务：驱动 USB-ECM 收帧并喂给 lwIP。 */
 static void task_net(void *arg)
 {
   (void)arg;
   for (;;) {
     rp_lwip_poll();
+    net_poll_count++;
 #if (BSP_ENABLE_IWDG != 0U)
     iwdg_feed();
 #endif

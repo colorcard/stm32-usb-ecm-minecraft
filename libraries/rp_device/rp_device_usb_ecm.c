@@ -133,14 +133,10 @@ void usb_ecm_poll(void)
     return;
   }
 
-  /* 驱动可能在通知之后才启动，周期性重发“已连接”以确保链路被判为 up。 */
-  if ((now - s_last_notify_ms) >= USB_ECM_NOTIFY_PERIOD_MS) {
-    if (USBD_ECM_SendNotification(&hUsbDeviceEcm,
-                                  ECM_NOTIFY_NETWORK_CONNECTION,
-                                  NULL, 0U) == (uint8_t)USBD_OK) {
-      s_last_notify_ms = now;
-    }
-  }
+  /* 注意：通知与数据共用同一个 IN 端点。连接建立后不再周期性重发通知，
+   * 否则会与 tcpip 线程的数据发送并发，破坏 USB IN 端点状态（表现为
+   * 大流量后 TCP 停摆、ping 不通）。 */
+  (void)now;
 }
 
 void usb_ecm_irq_handler(void)

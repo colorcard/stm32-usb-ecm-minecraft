@@ -60,6 +60,19 @@ def main():
         tag = p[len(reg) + 1:]
         groups.setdefault(reg, []).append(tag)
 
+    # 只保留“同步注册表”的标签：内置注册表（block/item/...）的标签客户端自带
+    # （MC-249007 保留），无需下发；且它们的标签组很大，单包会超出发送缓冲。
+    SYNCED = {
+        "banner_pattern", "damage_type", "dialog", "enchantment", "instrument",
+        "painting_variant", "timeline", "trim_material",
+        "trim_pattern", "jukebox_song", "chat_type", "wolf_variant",
+        "cat_variant", "frog_variant", "pig_variant", "cow_variant",
+        "chicken_variant", "dimension_type", "test_environment",
+        "test_instance", "world_clock", "decorated_pot_pattern",
+        "sulfur_cube_archetype", "block_transformer", "block_state_provider",
+    }
+    groups = {k: v for k, v in groups.items() if k in SYNCED}
+
     lines = []
     lines.append("/**")
     lines.append(" * @file mc_tag_names.h")
