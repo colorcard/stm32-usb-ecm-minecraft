@@ -155,9 +155,9 @@ static void mc_send_status_response(mc_conn_t *c)
   int o = 0;
 
   jl = snprintf(json, sizeof(json),
-                "{\"version\":{\"name\":\"Rapfi-STM32\",\"protocol\":%lu},"
+                "{\"version\":{\"name\":\"STM32-ECM\",\"protocol\":%lu},"
                 "\"players\":{\"max\":8,\"online\":0,\"sample\":[]},"
-                "\"description\":{\"text\":\"Rapfi STM32 USB-Ethernet\"}}",
+                "\"description\":{\"text\":\"STM32 USB-ECM Server\"}}",
                 (unsigned long)c->protocol);
   if (jl <= 0) {
     return;

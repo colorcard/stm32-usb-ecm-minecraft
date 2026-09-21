@@ -32,7 +32,3 @@ Thumbs.db
 
 # Local reference material (untracked)
 /refer/
-
-# Swift package
-host_swift/.build/
-host_swift/RapfiMac.app/

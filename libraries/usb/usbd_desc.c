@@ -8,8 +8,8 @@
 #define USBD_VID                      0x0483U
 #define USBD_PID                      0x5250U
 #define USBD_LANGID_STRING            1033U
-#define USBD_MANUFACTURER_STRING      "Rapfi"
-#define USBD_PRODUCT_STRING_FS        "Rapfi USB Ethernet"
+#define USBD_MANUFACTURER_STRING      "USB-ECM"
+#define USBD_PRODUCT_STRING_FS        "STM32 USB Ethernet"
 #define USBD_CONFIGURATION_STRING_FS  "ECM Config"
 #define USBD_INTERFACE_STRING_FS      "ECM Interface"
 

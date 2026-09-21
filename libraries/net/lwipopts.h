@@ -1,6 +1,6 @@
 /**
  * @file lwipopts.h
- * @brief Rapfi-Embedded 的 lwIP 配置（裸机 NO_SYS，IPv4，TCP/UDP）。
+ * @brief STM32 USB-ECM 工程的 lwIP 配置（裸机 NO_SYS，IPv4，TCP/UDP）。
  */
 #ifndef LWIP_LWIPOPTS_H
 #define LWIP_LWIPOPTS_H

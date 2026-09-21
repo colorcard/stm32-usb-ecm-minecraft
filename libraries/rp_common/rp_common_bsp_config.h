@@ -5,7 +5,7 @@
 
 /**
  * @file rp_common_bsp_config.h
- * @brief BSP 层集中默认参数（Rapfi-Embedded：五子棋引擎）。
+ * @brief BSP 层集中默认参数（STM32 USB-ECM 工程）。
  *
  * 原理图无法确定的数值集中在本文件，并带有 TODO 标注。
  * 应用层可在调用 BSP_xxx_Init() 时传入自定义配置覆盖这些默认值。
