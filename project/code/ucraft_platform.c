@@ -89,6 +89,7 @@ static void uc_recv_cb(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err
   }
 
   tcp_recved(pcb, p->tot_len);
+  (void)tcp_output(pcb); /* 立即 ACK，抑制对端重传导致的重复投递 */
   if (p->tot_len <= UC_RX_SIZE) {
     uint16_t total = p->tot_len;
     struct pbuf *q;
@@ -126,6 +127,14 @@ static err_t uc_accept_cb(void *arg, struct tcp_pcb *newpcb, err_t err)
   (void)arg;
   if ((err != ERR_OK) || (newpcb == NULL)) {
     return ERR_VAL;
+  }
+
+  for (i = 0U; i < UC_MAX_CONN; ++i) {
+    if (s_conn[i].used != 0U) {
+      /* 已有连接：拒绝新连接，避免同一会话被重复接受导致 player 状态互相干扰。 */
+      tcp_abort(newpcb);
+      return ERR_ABRT;
+    }
   }
 
   for (i = 0U; i < UC_MAX_CONN; ++i) {
@@ -335,8 +344,9 @@ ssize_t U_recv(int fd, void *buf, size_t len, int flags)
 ssize_t U_send(int fd, const void *buf, size_t len, int flags)
 {
   uc_conn_t *c;
-  uint16_t space;
-  uint16_t n;
+  const uint8_t *p = (const uint8_t *)buf;
+  size_t sent = 0U;
+  uint32_t start;
 
   (void)flags;
   if ((fd < 1) || (fd > (int)UC_MAX_CONN)) {
@@ -347,18 +357,32 @@ ssize_t U_send(int fd, const void *buf, size_t len, int flags)
     errno = EAGAIN;
     return -1;
   }
-  space = tcp_sndbuf(c->pcb);
-  if (space == 0U) {
+
+  /* 阻塞发送直至全部入队：期间驱动 lwIP 以接收 ACK、释放发送缓冲，
+   * 尽量避免走 UCraft 的非阻塞排队路径（其假设通常能整段发送）。 */
+  start = HAL_GetTick();
+  while (sent < len) {
+    uint16_t space = tcp_sndbuf(c->pcb);
+    if (space > 0U) {
+      size_t remaining = len - sent;
+      uint16_t n = (remaining < (size_t)space) ? (uint16_t)remaining : space;
+      if (tcp_write(c->pcb, &p[sent], n, TCP_WRITE_FLAG_COPY) != ERR_OK) {
+        break;
+      }
+      (void)tcp_output(c->pcb);
+      sent += n;
+    } else {
+      rp_lwip_poll();
+      if ((HAL_GetTick() - start) > 3000U) {
+        break;
+      }
+    }
+  }
+  if (sent == 0U) {
     errno = EAGAIN;
     return -1;
   }
-  n = (len < (size_t)space) ? (uint16_t)len : space;
-  if (tcp_write(c->pcb, buf, n, TCP_WRITE_FLAG_COPY) != ERR_OK) {
-    errno = EAGAIN;
-    return -1;
-  }
-  (void)tcp_output(c->pcb);
-  return (ssize_t)n;
+  return (ssize_t)sent;
 }
 
 static void uc_conn_release(uc_conn_t *c)
