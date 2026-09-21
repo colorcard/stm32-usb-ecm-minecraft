@@ -1,7 +1,6 @@
 #include "rp_common_headfile.h"
 #include "rp_device_usb_ecm.h"
 #include "rp_lwip.h"
-#include "server_display.h"
 #include "UCraft.h"
 
 #include "FreeRTOS.h"
@@ -20,16 +19,6 @@ static void task_net(void *arg)
     iwdg_feed();
 #endif
     vTaskDelay(pdMS_TO_TICKS(1));
-  }
-}
-
-/** @brief 显示任务：低频刷新 LCD 服务器信息。 */
-static void task_display(void *arg)
-{
-  (void)arg;
-  for (;;) {
-    server_display_poll();
-    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
 
@@ -64,13 +53,10 @@ int main(void)
   }
 
   debug_init();
-  (void)lcd_hw_init();
   (void)usb_ecm_init();
   (void)rp_lwip_init();
-  server_display_init();
 
   (void)xTaskCreate(task_net, "net", 512U, NULL, 2U, NULL);
-  (void)xTaskCreate(task_display, "disp", 512U, NULL, 1U, NULL);
   (void)xTaskCreate(task_ucraft, "ucraft", 2048U, NULL, 3U, NULL);
 
   vTaskStartScheduler();

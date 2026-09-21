@@ -99,9 +99,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/rp_driver/rp_driver_uart.c
     ${CMAKE_SOURCE_DIR}/libraries/rp_driver/rp_driver_watchdog.c
 
-    # 外接设备驱动层
+    # 外接设备驱动层（LCD 显示已关闭以节省内存）
     ${CMAKE_SOURCE_DIR}/libraries/rp_device/rp_device_key.c
-    ${CMAKE_SOURCE_DIR}/libraries/rp_device/rp_device_lcd_hw.c
 
     # 框架入口
     ${CMAKE_SOURCE_DIR}/project/user/src/main.c
@@ -163,11 +162,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/net/rp_netif_ecm.c
     ${CMAKE_SOURCE_DIR}/libraries/net/rp_dhcpd.c
 
-    # Minecraft Java 协议服务器
-    ${CMAKE_SOURCE_DIR}/project/code/mc_server.c
-
-    # LCD 服务器信息显示
-    ${CMAKE_SOURCE_DIR}/project/code/server_display.c
+    # Minecraft Java 协议服务器（UCraft 取代，保留文件但不再编译）
 )
 
 # ---------------------------------------------------------------------------
