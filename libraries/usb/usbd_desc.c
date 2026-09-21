@@ -9,9 +9,9 @@
 #define USBD_PID                      0x5250U
 #define USBD_LANGID_STRING            1033U
 #define USBD_MANUFACTURER_STRING      "Rapfi"
-#define USBD_PRODUCT_STRING_FS        "Rapfi Gomoku Engine"
-#define USBD_CONFIGURATION_STRING_FS  "CDC Config"
-#define USBD_INTERFACE_STRING_FS      "CDC Interface"
+#define USBD_PRODUCT_STRING_FS        "Rapfi USB Ethernet"
+#define USBD_CONFIGURATION_STRING_FS  "ECM Config"
+#define USBD_INTERFACE_STRING_FS      "ECM Interface"
 
 /** @brief 序列号字符串描述符总长度。 */
 #define USB_SIZ_STRING_SERIAL         0x1AU
@@ -43,7 +43,7 @@ USBD_DescriptorsTypeDef FS_Desc = {
 };
 
 static const uint8_t s_device_desc[USB_LEN_DEV_DESC] = {
-  0x12U, USB_DESC_TYPE_DEVICE, 0x00U, 0x02U, 0x02U, 0x00U, 0x00U, 0x40U,
+  0x12U, USB_DESC_TYPE_DEVICE, 0x00U, 0x02U, 0xEFU, 0x02U, 0x01U, 0x40U,
   (uint8_t)(USBD_VID & 0xFFU), (uint8_t)(USBD_VID >> 8U),
   (uint8_t)(USBD_PID & 0xFFU), (uint8_t)(USBD_PID >> 8U),
   0x00U, 0x02U, 0x01U, 0x02U, 0x03U, 0x01U

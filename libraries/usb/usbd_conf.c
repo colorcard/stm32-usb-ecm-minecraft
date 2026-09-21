@@ -1,7 +1,6 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
-#include "usbd_cdc.h"
-#include "usbd_cdc_if.h"
+#include "usbd_ecm.h"
 #include "usbd_conf.h"
 
 /** @brief PA11/PA12 的 USB FS 复用功能号（AF10）。 */
@@ -110,12 +109,12 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   pdev->pData = &hpcd_USB_FS;
   hpcd_USB_FS.pData = pdev;
 
-  /* PMA 缓冲分配（端点 0 双向，CDC 数据/命令）。 */
+  /* PMA 缓冲分配（端点 0 双向，ECM 通知/数据）。 */
   HAL_PCDEx_PMAConfig(pdev->pData, 0x00U, PCD_SNG_BUF, 0x18U);
   HAL_PCDEx_PMAConfig(pdev->pData, 0x80U, PCD_SNG_BUF, 0x58U);
-  HAL_PCDEx_PMAConfig(pdev->pData, CDC_IN_EP, PCD_SNG_BUF, 0x98U);
-  HAL_PCDEx_PMAConfig(pdev->pData, CDC_OUT_EP, PCD_SNG_BUF, 0xD8U);
-  HAL_PCDEx_PMAConfig(pdev->pData, CDC_CMD_EP, PCD_SNG_BUF, 0x118U);
+  HAL_PCDEx_PMAConfig(pdev->pData, ECM_DATA_IN_EP, PCD_SNG_BUF, 0x98U);
+  HAL_PCDEx_PMAConfig(pdev->pData, ECM_DATA_OUT_EP, PCD_SNG_BUF, 0xD8U);
+  HAL_PCDEx_PMAConfig(pdev->pData, ECM_NOTIFY_EP, PCD_SNG_BUF, 0x118U);
   return USBD_OK;
 }
 

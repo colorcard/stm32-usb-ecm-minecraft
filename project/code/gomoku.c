@@ -31,7 +31,7 @@
 #define SCORE_EVAL_MAX  6000
 
 /** @brief 置换表：2^13 项 × 8 字节 = 64KB。 */
-#define TT_BITS         13
+#define TT_BITS         11
 #define TT_SIZE         (1U << TT_BITS)
 #define TT_MASK         (TT_SIZE - 1U)
 

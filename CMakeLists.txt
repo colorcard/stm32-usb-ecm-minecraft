@@ -137,6 +137,54 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 # ---------------------------------------------------------------------------
+# 网络：lwIP（裸机） + USB CDC-ECM 网卡 + Minecraft 服务器
+# ---------------------------------------------------------------------------
+set(LWIP_DIR ${CMAKE_SOURCE_DIR}/libraries/third_party/lwip)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    # ECM 设备类与设备层
+    ${CMAKE_SOURCE_DIR}/libraries/usb/usbd_ecm.c
+    ${CMAKE_SOURCE_DIR}/libraries/usb/usbd_ecm_if.c
+    ${CMAKE_SOURCE_DIR}/libraries/rp_device/rp_device_usb_ecm.c
+
+    # lwIP 核心（NO_SYS，IPv4，TCP/UDP）
+    ${LWIP_DIR}/src/core/init.c
+    ${LWIP_DIR}/src/core/def.c
+    ${LWIP_DIR}/src/core/inet_chksum.c
+    ${LWIP_DIR}/src/core/ip.c
+    ${LWIP_DIR}/src/core/mem.c
+    ${LWIP_DIR}/src/core/memp.c
+    ${LWIP_DIR}/src/core/netif.c
+    ${LWIP_DIR}/src/core/pbuf.c
+    ${LWIP_DIR}/src/core/raw.c
+    ${LWIP_DIR}/src/core/stats.c
+    ${LWIP_DIR}/src/core/sys.c
+    ${LWIP_DIR}/src/core/tcp.c
+    ${LWIP_DIR}/src/core/tcp_in.c
+    ${LWIP_DIR}/src/core/tcp_out.c
+    ${LWIP_DIR}/src/core/timeouts.c
+    ${LWIP_DIR}/src/core/udp.c
+    ${LWIP_DIR}/src/core/ipv4/etharp.c
+    ${LWIP_DIR}/src/core/ipv4/icmp.c
+    ${LWIP_DIR}/src/core/ipv4/dhcp.c
+    ${LWIP_DIR}/src/core/ipv4/ip4.c
+    ${LWIP_DIR}/src/core/ipv4/ip4_addr.c
+    ${LWIP_DIR}/src/core/ipv4/ip4_frag.c
+    ${LWIP_DIR}/src/netif/ethernet.c
+
+    # 移植与网卡驱动
+    ${CMAKE_SOURCE_DIR}/libraries/net/rp_lwip.c
+    ${CMAKE_SOURCE_DIR}/libraries/net/rp_netif_ecm.c
+    ${CMAKE_SOURCE_DIR}/libraries/net/rp_dhcpd.c
+
+    # Minecraft Java 协议服务器
+    ${CMAKE_SOURCE_DIR}/project/code/mc_server.c
+)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/libraries/net
+    ${LWIP_DIR}/src/include
+)
+
+# ---------------------------------------------------------------------------
 # 头文件搜索路径
 # ---------------------------------------------------------------------------
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -157,6 +205,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     USE_HAL_DRIVER
     STM32G474xx
+    USBD_SUPPORT_USER_STRING_DESC=1
     $<$<CONFIG:Debug>:DEBUG>
 )
 

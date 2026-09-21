@@ -1,5 +1,6 @@
 #include "rp_common_headfile.h"
 #include "rp_common_fault.h"
+#include "rp_device_usb_ecm.h"
 
 /******************************************************************************/
 /*                       Cortex-M4 处理器异常处理                              */
@@ -128,7 +129,7 @@ void DMA1_Channel3_IRQHandler(void)
  */
 void USB_LP_IRQHandler(void)
 {
-  usb_cdc_irq_handler();
+  usb_ecm_irq_handler();
 }
 
 /**
