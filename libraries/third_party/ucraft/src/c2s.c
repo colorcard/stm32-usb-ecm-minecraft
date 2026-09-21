@@ -321,8 +321,21 @@ static void ConfigurationC2S_finish_configuration(player_t *currentPlayer)
 static void ConfigurationC2S_keep_alive(player_t *currentPlayer) {}
 static void ConfigurationC2S_pong(player_t *currentPlayer) {}
 static void ConfigurationC2S_resource_pack(player_t *currentPlayer) {}
+volatile int uc_known_core;
 static void ConfigurationC2S_select_known_packs(player_t *currentPlayer)
 {
+    int32_t count = readVarInt();
+    char ns[64], id[64], ver[64];
+    for (int32_t i = 0; i < count; i++)
+    {
+        readString(ns, sizeof(ns));
+        readString(id, sizeof(id));
+        readString(ver, sizeof(ver));
+        if (strcmp(id, "core") == 0)
+        {
+            uc_known_core = 1;
+        }
+    }
     currentPlayer->configuration_known_packs_ack_event = 1;
 }
 static void ConfigurationC2S_custom_click_action(player_t *currentPlayer) {}

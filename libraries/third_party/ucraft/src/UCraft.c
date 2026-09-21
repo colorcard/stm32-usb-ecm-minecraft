@@ -17,6 +17,7 @@
 #include "encryption.h"
 #include "https.h"
 
+extern volatile int uc_known_core;
 int server_fd = -1;
 size_t main_tick = 0;
 volatile int uc_stage;
@@ -270,8 +271,11 @@ static void s2cHandler()
         }
         if (currentPlayer->configuration_known_packs_ack_event)
         {
-            ConfigurationS2Cregistry();
-            ConfigurationS2Cupdatetags();
+            if (!uc_known_core)
+            {
+                ConfigurationS2Cregistry();
+                ConfigurationS2Cupdatetags();
+            }
             ConfigurationS2Cready();
             currentPlayer->global_buffer_start_index = sendGetGlobalBufferIndex();
             currentPlayer->ingame = 1;

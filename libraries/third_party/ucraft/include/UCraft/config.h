@@ -22,9 +22,9 @@
 #define WORLD_SEED 67
 #define RESPAWNSCREEN 1
 
-/* 与客户端 26.3 对齐（26.2+ 协议 776）。已知包版本刻意不匹配，使客户端
- * 回复“0 个已知包”，从而走服务器下发完整注册表的路径。 */
-#define CLIENT_VERSION "26.2"
+/* 与客户端 26.3 对齐（26.2+ 协议 776）。已知包版本与客户端一致，客户端会
+ * 确认自带核心数据包，服务器可跳过下发注册表、直接 Finish Configuration。 */
+#define CLIENT_VERSION "26.3"
 #define PROTOCOL_VERSION 776
 #define LONG_PROTOCOL_VERSION "\\u00A7c STM32 USB-ECM: 26.3"
 #define MOTD "\\u00A7a\\u00A7lSTM32 USB-ECM\\u00A7r \\u00A77Minecraft server in C"
