@@ -271,11 +271,8 @@ static void s2cHandler()
         }
         if (currentPlayer->configuration_known_packs_ack_event)
         {
-            if (!uc_known_core)
-            {
-                ConfigurationS2Cregistry();
-                ConfigurationS2Cupdatetags();
-            }
+            ConfigurationS2Cregistry();
+            ConfigurationS2Cupdatetags();
             ConfigurationS2Cready();
             currentPlayer->global_buffer_start_index = sendGetGlobalBufferIndex();
             currentPlayer->ingame = 1;
