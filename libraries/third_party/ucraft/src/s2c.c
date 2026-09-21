@@ -610,7 +610,7 @@ void ConfigurationS2Creset(void)
 
 int ConfigurationS2Cprogress(void)
 {
-  enum { CFG_PKTS_PER_TICK = 4, TAG_CHUNK = 16 };
+  enum { CFG_PKTS_PER_TICK = 4 };
   int budget = CFG_PKTS_PER_TICK;
   if (cfg_phase == 0)
   {
@@ -638,28 +638,22 @@ int ConfigurationS2Cprogress(void)
   {
     while (cfg_tag_g < MC_TAG_GROUP_COUNT && budget > 0)
     {
+      /* 每个注册表的标签必须在同一个 Update Tags 包内一次发完：
+       * 同一注册表分多包时后者会覆盖前者（只剩最后一包）。 */
       const mc_tag_group_t *grp = &mc_tag_groups[cfg_tag_g];
-      uint16_t n = grp->count - cfg_tag_i;
-      if (n > TAG_CHUNK)
-        n = TAG_CHUNK;
       sendStart();
       sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
       sendByte(1);
       sendString(grp->registry, -1);
-      sendVarInt(n);
-      for (uint16_t j = 0; j < n; j++)
+      sendVarInt(grp->count);
+      for (uint16_t j = 0; j < grp->count; j++)
       {
-        sendString(grp->tags[cfg_tag_i + j], -1);
+        sendString(grp->tags[j], -1);
         sendByte(0);
       }
       sendDone();
       sendDispatch();
-      cfg_tag_i += n;
-      if (cfg_tag_i >= grp->count)
-      {
-        cfg_tag_i = 0;
-        cfg_tag_g++;
-      }
+      cfg_tag_g++;
       budget--;
     }
     if (cfg_tag_g >= MC_TAG_GROUP_COUNT)
