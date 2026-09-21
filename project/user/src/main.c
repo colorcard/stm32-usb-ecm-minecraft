@@ -1,15 +1,12 @@
 #include "rp_common_headfile.h"
-#include "rp_device_usb_cdc.h"
 #include "rp_device_usb_ecm.h"
 #include "rp_lwip.h"
 #include "mc_server.h"
-#include "rapfi_app.h"
 
 /**
  * @brief 应用入口。
  * @return 不会返回。
- * @note 初始化顺序：HAL -> 时钟 -> 板级外设 -> ST7789 -> USB ECM -> lwIP
- *       -> Minecraft 服务器 -> 五子棋应用。
+ * @note 初始化顺序：HAL -> 时钟 -> 板级外设 -> USB ECM -> lwIP -> 服务器。
  */
 int main(void)
 {
@@ -27,12 +24,10 @@ int main(void)
   (void)usb_ecm_init();
   (void)rp_lwip_init();
   (void)mc_server_init();
-  app_init();
 
   while (1) {
     rp_lwip_poll();
     mc_server_poll();
-    app_poll();
 
 #if (BSP_ENABLE_IWDG != 0U)
     iwdg_feed();

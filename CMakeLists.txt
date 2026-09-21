@@ -1,16 +1,19 @@
 cmake_minimum_required(VERSION 3.22)
 
 #
-# Rapfi-Embedded —— STM32G474 五子棋引擎工程
+# STM32G474 —— USB CDC-ECM 以太网 + lwIP + Minecraft 服务端工程
 #
 # 目录结构：
 #   Drivers/            STM32 HAL / CMSIS（厂商底层）
 #   libraries/sdk/      system、HAL 配置、newlib 桩
 #   libraries/rp_common 公共层（时钟、延时、BSP 入口、中断）
 #   libraries/rp_driver 芯片外设驱动层
-#   libraries/rp_device 外接设备驱动层（含 USB CDC 传输）
+#   libraries/rp_device 外接设备驱动层（含 USB ECM 设备层）
+#   libraries/usb       USB Device 栈配置、描述符与 ECM 类
+#   libraries/net       lwIP 移植、ECM 网卡驱动与 DHCP 服务器
+#   libraries/third_party/lwip  lwIP 源码
 #   project/user        框架入口（main / isr）
-#   project/code        用户业务代码（引擎/界面）
+#   project/code        Minecraft 协议服务端
 #
 
 # Setup compiler settings
@@ -38,10 +41,6 @@ enable_language(C ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
-
-# 引擎是计算热点，单独用 -O2（其余仍按构建类型）。
-set_source_files_properties(${CMAKE_SOURCE_DIR}/project/code/gomoku.c
-    PROPERTIES COMPILE_OPTIONS "-O2")
 
 # ---------------------------------------------------------------------------
 # 厂商 HAL / CMSIS 源码
@@ -107,33 +106,21 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # 框架入口
     ${CMAKE_SOURCE_DIR}/project/user/src/main.c
     ${CMAKE_SOURCE_DIR}/project/user/src/isr.c
-
-    # 应用与引擎
-    ${CMAKE_SOURCE_DIR}/project/code/rapfi_app.c
-    ${CMAKE_SOURCE_DIR}/project/code/gomoku.c
 )
 
 # ---------------------------------------------------------------------------
-# 显示：ST7789 硬件层（棋盘用）
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# USB Device（Type-C 原生 USB CDC，引擎文本协议通道）
+# USB Device（Type-C 原生 USB，CDC-ECM 以太网卡）
 # ---------------------------------------------------------------------------
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/third_party/STM32_USB_Device_Library/Core/Src/usbd_core.c
     ${CMAKE_SOURCE_DIR}/libraries/third_party/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c
     ${CMAKE_SOURCE_DIR}/libraries/third_party/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c
-    ${CMAKE_SOURCE_DIR}/libraries/third_party/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc.c
     ${CMAKE_SOURCE_DIR}/libraries/usb/usbd_conf.c
     ${CMAKE_SOURCE_DIR}/libraries/usb/usbd_desc.c
-    ${CMAKE_SOURCE_DIR}/libraries/usb/usbd_cdc_if.c
-    ${CMAKE_SOURCE_DIR}/libraries/rp_device/rp_device_usb_cdc.c
 )
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/usb
     ${CMAKE_SOURCE_DIR}/libraries/third_party/STM32_USB_Device_Library/Core/Inc
-    ${CMAKE_SOURCE_DIR}/libraries/third_party/STM32_USB_Device_Library/Class/CDC/Inc
 )
 
 # ---------------------------------------------------------------------------

@@ -26,6 +26,5 @@
 /* ====================== 外接设备驱动层 ====================== */
 #include "rp_device_key.h"
 #include "rp_device_lcd_hw.h"
-#include "rp_device_usb_cdc.h"
 
 #endif /* _rp_common_headfile_h_ */
