@@ -322,10 +322,13 @@ static void ConfigurationC2S_keep_alive(player_t *currentPlayer) {}
 static void ConfigurationC2S_pong(player_t *currentPlayer) {}
 static void ConfigurationC2S_resource_pack(player_t *currentPlayer) {}
 volatile int uc_known_core;
+volatile int uc_dbg_known_count;
+volatile char uc_dbg_known_ver[32];
 static void ConfigurationC2S_select_known_packs(player_t *currentPlayer)
 {
     int32_t count = readVarInt();
     char ns[64], id[64], ver[64];
+    uc_dbg_known_count = count;
     for (int32_t i = 0; i < count; i++)
     {
         readString(ns, sizeof(ns));
@@ -334,6 +337,7 @@ static void ConfigurationC2S_select_known_packs(player_t *currentPlayer)
         if (strcmp(id, "core") == 0)
         {
             uc_known_core = 1;
+            strncpy((char *)uc_dbg_known_ver, ver, sizeof(uc_dbg_known_ver) - 1);
         }
     }
     currentPlayer->configuration_known_packs_ack_event = 1;

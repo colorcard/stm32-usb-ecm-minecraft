@@ -8,6 +8,7 @@
 #include "wrapper.h"
 #include "util.h"
 #include "blocks.h"
+#include "mc_registry_names.h"
 
 #ifdef ONLINE_MODE
 #include "mbedtls/base64.h"
@@ -595,289 +596,21 @@ void ConfigurationS2Cknownpacks()
 
 void ConfigurationS2Cregistry()
 {
-  /* dimension_type 需完整 NBT，交由客户端内置注册表提供。 */
-
-  /* worldgen/biome 需完整 NBT，交由客户端内置注册表提供。 */
-
-  static const char *damage_types[] = {
-      "arrow",
-      "bad_respawn_point",
-      "cactus",
-      "campfire",
-      "cramming",
-      "dragon_breath",
-      "drown",
-      "dry_out",
-      "ender_pearl",
-      "explosion",
-      "fall",
-      "falling_anvil",
-      "falling_block",
-      "falling_stalactite",
-      "fireball",
-      "fireworks",
-      "fly_into_wall",
-      "freeze",
-      "generic",
-      "generic_kill",
-      "hot_floor",
-      "in_fire",
-      "in_wall",
-      "indirect_magic",
-      "lava",
-      "lightning_bolt",
-      "mace_smash",
-      "magic",
-      "mob_attack",
-      "mob_attack_no_aggro",
-      "mob_projectile",
-      "on_fire",
-      "out_of_world",
-      "outside_border",
-      "player_attack",
-      "player_explosion",
-      "sonic_boom",
-      "spit",
-      "stalagmite",
-      "starve",
-      "sting",
-      "sweet_berry_bush",
-      "thorns",
-      "thrown",
-      "trident",
-      "unattributed_fireball",
-      "wind_charge",
-      "wither",
-      "wither_skull",
-      "spear"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("damage_type", -1);
-  sendVarInt(sizeof(damage_types) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(damage_types) / sizeof(char *)); i++)
+  /* 下发全部同步注册表的条目名列表；条目数据省略，由客户端 known pack 提供。 */
+  for (size_t r = 0; r < MC_REGISTRY_COUNT; r++)
   {
-    sendString(damage_types[i], -1);
-    sendByte(0);
+    const mc_registry_desc_t *reg = &mc_registries[r];
+    sendStart();
+    sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
+    sendString(reg->registry, -1);
+    sendVarInt((int32_t)reg->count);
+    for (uint16_t i = 0; i < reg->count; i++)
+    {
+      sendString(reg->names[i], -1);
+      sendByte(0);
+    }
+    sendDone();
   }
-  sendDone();
-
-  static const char *timeline[] = {
-      "day",
-      "early_game",
-      "moon",
-      "villager_schedule"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("timeline", -1);
-  sendVarInt(sizeof(timeline) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(timeline) / sizeof(char *)); i++)
-  {
-    sendString(timeline[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  static const char *world_clock[] = {
-      "overworld",
-      "the_end",
-  };
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("world_clock", -1);
-  sendVarInt(sizeof(world_clock) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(world_clock) / sizeof(char *)); i++)
-  {
-    sendString(world_clock[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  static const char *trim_materials[] = {
-      "diamond",
-      "redstone",
-      "emerald",
-      "lapis",
-      "quartz",
-      "resin",
-      "netherite",
-      "amethyst",
-      "copper",
-      "gold",
-      "iron"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("trim_material", -1);
-  sendVarInt(sizeof(trim_materials) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(trim_materials) / sizeof(char *)); i++)
-  {
-    sendString(trim_materials[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  static const char *chicken_variant[] = {
-      "cold",
-      "temperate",
-      "warm"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("chicken_variant", -1);
-  sendVarInt(sizeof(chicken_variant) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(chicken_variant) / sizeof(char *)); i++)
-  {
-    sendString(chicken_variant[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  static const char *jukebox_song[] = {
-      "11",
-      "13",
-      "5",
-      "blocks",
-      "cat",
-      "chirp",
-      "creator",
-      "creator_music_box",
-      "far",
-      "lava_chicken",
-      "mall",
-      "mellohi",
-      "otherside",
-      "pigstep",
-      "precipice",
-      "relic",
-      "stal",
-      "strad",
-      "tears",
-      "wait",
-      "ward"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("jukebox_song", -1);
-  sendVarInt(sizeof(jukebox_song) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(jukebox_song) / sizeof(char *)); i++)
-  {
-    sendString(jukebox_song[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  static const char *instruments[] = {
-      "admire_goat_horn",
-      "call_goat_horn",
-      "dream_goat_horn",
-      "feel_goat_horn",
-      "ponder_goat_horn",
-      "seek_goat_horn",
-      "sing_goat_horn",
-      "yearn_goat_horn"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("instrument", -1);
-  sendVarInt(sizeof(instruments) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(instruments) / sizeof(char *)); i++)
-  {
-    sendString(instruments[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("chicken_sound_variant", -1);
-  sendVarInt(1);
-  sendString("classic", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("cat_sound_variant", -1);
-  sendVarInt(1);
-  sendString("classic", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("cow_sound_variant", -1);
-  sendVarInt(1);
-  sendString("classic", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("pig_sound_variant", -1);
-  sendVarInt(1);
-  sendString("classic", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("zombie_nautilus_variant", -1);
-  sendVarInt(1);
-  sendString("temperate", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("wolf_variant", -1);
-  sendVarInt(1);
-  sendString("ashen", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("painting_variant", -1);
-  sendVarInt(1);
-  sendString("alban", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("pig_variant", -1);
-  sendVarInt(1);
-  sendString("cold", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("cat_variant", -1);
-  sendVarInt(1);
-  sendString("black", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("cow_variant", -1);
-  sendVarInt(1);
-  sendString("cold", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("frog_variant", -1);
-  sendVarInt(1);
-  sendString("cold", -1);
-  sendByte(0);
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("wolf_sound_variant", -1);
-  sendVarInt(1);
-  sendString("angry", -1);
-  sendByte(0);
-  sendDone();
 }
 void ConfigurationS2Cupdatetags()
 {
@@ -896,6 +629,15 @@ void ConfigurationS2Cupdatetags()
     sendString(damage_types_tag[i], -1);
     sendByte(0);
   }
+  sendDone();
+
+  sendStart();
+  sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
+  sendByte(1);
+  sendString("block", -1);
+  sendVarInt(1);
+  sendString("infiniburn_overworld", -1);
+  sendByte(0);
   sendDone();
 
   static const char *banner_pattern_tag[] = {
