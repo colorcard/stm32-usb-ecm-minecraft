@@ -340,6 +340,7 @@ static void ConfigurationC2S_select_known_packs(player_t *currentPlayer)
             strncpy((char *)uc_dbg_known_ver, ver, sizeof(uc_dbg_known_ver) - 1);
         }
     }
+    ConfigurationS2Creset();
     currentPlayer->configuration_known_packs_ack_event = 1;
 }
 static void ConfigurationC2S_custom_click_action(player_t *currentPlayer) {}

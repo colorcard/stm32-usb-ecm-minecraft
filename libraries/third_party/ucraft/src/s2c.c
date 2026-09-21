@@ -595,40 +595,53 @@ void ConfigurationS2Cknownpacks()
   sendDone();
 }
 
-void ConfigurationS2Cregistry()
+static int cfg_phase = 0;      /* 0=注册表 1=标签 2=完成 */
+static uint32_t cfg_reg = 0;    /* 已发注册表数 */
+static uint32_t cfg_tag_g = 0;  /* 已发标签组 */
+static uint32_t cfg_tag_i = 0;  /* 组内已发标签数 */
+
+void ConfigurationS2Creset(void)
 {
-  /* 下发全部同步注册表的条目名列表；条目数据省略，由客户端 known pack 提供。 */
-  for (size_t r = 0; r < MC_REGISTRY_COUNT; r++)
-  {
-    const mc_registry_desc_t *reg = &mc_registries[r];
-    sendStart();
-    sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-    sendString(reg->registry, -1);
-    sendVarInt((int32_t)reg->count);
-    for (uint16_t i = 0; i < reg->count; i++)
-    {
-      sendString(reg->names[i], -1);
-      sendByte(0);
-    }
-    sendDone();
-    sendDispatch(); /* 逐条 flush，避免发送缓冲累积到十几 KB 导致堆分配失败 */
-  }
+  cfg_phase = 0;
+  cfg_reg = 0;
+  cfg_tag_g = 0;
+  cfg_tag_i = 0;
 }
-void ConfigurationS2Cupdatetags()
+
+int ConfigurationS2Cprogress(void)
 {
-  /* 下发全部原版标签（空条目）。客户端在配置阶段会把未带数据的注册表从内置包
-   * 加载，包内数据（维度/附魔/生物群系等）会引用大量原版标签；只要标签存在
-   * （条目可为空）即可通过解析。为避免单个包过大耗尽堆，按 CHUNK 个标签分组
-   * 发送（同一注册表可多次下发，标签按名逐条生效）。 */
-  enum { MC_TAG_CHUNK = 16 };
-  for (size_t g = 0; g < MC_TAG_GROUP_COUNT; g++)
+  enum { CFG_PKTS_PER_TICK = 4, TAG_CHUNK = 16 };
+  int budget = CFG_PKTS_PER_TICK;
+  if (cfg_phase == 0)
   {
-    const mc_tag_group_t *grp = &mc_tag_groups[g];
-    for (uint16_t i = 0; i < grp->count; i += MC_TAG_CHUNK)
+    while (cfg_reg < MC_REGISTRY_COUNT && budget > 0)
     {
-      uint16_t n = grp->count - i;
-      if (n > MC_TAG_CHUNK)
-        n = MC_TAG_CHUNK;
+      const mc_registry_desc_t *reg = &mc_registries[cfg_reg];
+      sendStart();
+      sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
+      sendString(reg->registry, -1);
+      sendVarInt((int32_t)reg->count);
+      for (uint16_t i = 0; i < reg->count; i++)
+      {
+        sendString(reg->names[i], -1);
+        sendByte(0);
+      }
+      sendDone();
+      sendDispatch();
+      cfg_reg++;
+      budget--;
+    }
+    if (cfg_reg >= MC_REGISTRY_COUNT)
+      cfg_phase = 1;
+  }
+  if (cfg_phase == 1)
+  {
+    while (cfg_tag_g < MC_TAG_GROUP_COUNT && budget > 0)
+    {
+      const mc_tag_group_t *grp = &mc_tag_groups[cfg_tag_g];
+      uint16_t n = grp->count - cfg_tag_i;
+      if (n > TAG_CHUNK)
+        n = TAG_CHUNK;
       sendStart();
       sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
       sendByte(1);
@@ -636,13 +649,23 @@ void ConfigurationS2Cupdatetags()
       sendVarInt(n);
       for (uint16_t j = 0; j < n; j++)
       {
-        sendString(grp->tags[i + j], -1);
+        sendString(grp->tags[cfg_tag_i + j], -1);
         sendByte(0);
       }
       sendDone();
       sendDispatch();
+      cfg_tag_i += n;
+      if (cfg_tag_i >= grp->count)
+      {
+        cfg_tag_i = 0;
+        cfg_tag_g++;
+      }
+      budget--;
     }
+    if (cfg_tag_g >= MC_TAG_GROUP_COUNT)
+      cfg_phase = 2;
   }
+  return cfg_phase == 2;
 }
 void ConfigurationS2Cready()
 {

@@ -63,22 +63,22 @@
 #define MEM_LIBC_MALLOC             0
 #define MEMP_MEM_MALLOC             0
 #define MEM_ALIGNMENT               4
-#define MEM_SIZE                    (8 * 1024)
+#define MEM_SIZE                    (20 * 1024)
 #define MEMP_OVERFLOW_CHECK         0
 #define MEMP_SANITY_CHECK           0
 
-#define MEMP_NUM_PBUF               16
+#define MEMP_NUM_PBUF               24
 #define MEMP_NUM_RAW_PCB            4
 #define MEMP_NUM_UDP_PCB            4
 #define MEMP_NUM_TCP_PCB            4
 #define MEMP_NUM_TCP_PCB_LISTEN     2
-#define MEMP_NUM_TCP_SEG            16
+#define MEMP_NUM_TCP_SEG            32
 #define MEMP_NUM_REASSDATA          0
 #define MEMP_NUM_FRAG_PBUF          0
 #define MEMP_NUM_ARP_QUEUE          8
 #define MEMP_NUM_SYS_TIMEOUT        16
 
-#define PBUF_POOL_SIZE              8
+#define PBUF_POOL_SIZE              12
 #define PBUF_POOL_BUFSIZE           1536
 
 /* ------------------------------------------------------------------ */
@@ -86,8 +86,8 @@
 /* ------------------------------------------------------------------ */
 #define LWIP_TCP_SACK_OUT           0
 #define TCP_MSS                     1460
-#define TCP_WND                     (2 * TCP_MSS)
-#define TCP_SND_BUF                 (2 * TCP_MSS)
+#define TCP_WND                     (4 * TCP_MSS)
+#define TCP_SND_BUF                 (8 * TCP_MSS)
 #define TCP_LISTEN_BACKLOG          1
 #define LWIP_TCP_KEEPALIVE          0
 #define LWIP_WND_SCALE              0

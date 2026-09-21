@@ -33,7 +33,7 @@ extern uint32_t SystemCoreClock;
 
 #define configSUPPORT_STATIC_ALLOCATION         0
 #define configSUPPORT_DYNAMIC_ALLOCATION        1
-#define configTOTAL_HEAP_SIZE                   (40 * 1024)
+#define configTOTAL_HEAP_SIZE                   (28 * 1024)
 
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0

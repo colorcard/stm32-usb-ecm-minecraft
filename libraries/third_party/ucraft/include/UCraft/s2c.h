@@ -221,6 +221,8 @@ void ConfigurationS2Cfeatures();
 void ConfigurationS2Cknownpacks();
 void ConfigurationS2Cregistry();
 void ConfigurationS2Cupdatetags();
+int ConfigurationS2Cprogress(void);
+void ConfigurationS2Creset(void);
 void ConfigurationS2Cready();
 void ConfigurationS2Cdisconnect(player_t *currentPlayer, char *reason);
 

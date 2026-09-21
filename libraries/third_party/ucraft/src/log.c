@@ -6,10 +6,8 @@
 
 void printl(const char *type, const char *fmt, ...)
 {
-    char buffer[LOG_BUFFER_SIZE];
-    va_list args;
-    va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
-    va_end(args);
-    printf("[%s]: %s", type, buffer);
+    /* 目标端无可靠 stdio（printf 会触发 newlib 堆/栈冲突而硬故障），
+     * 默认丢弃日志；需要时可用 UART 安全重定向。 */
+    (void)type;
+    (void)fmt;
 }

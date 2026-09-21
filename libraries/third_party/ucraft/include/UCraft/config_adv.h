@@ -12,7 +12,7 @@
 #define MEM_CHUNK_SIZE 256    /* Allocation granularity */
 #define MEM_CHUNK_THRESHOLD 2 /* Number of chunks to allocate before reallocating */
 
-#define MAX_SEND_FRAGMENT_SIZE 1024 /* 每轮最多向 lwIP 推入的字节数 */
+#define MAX_SEND_FRAGMENT_SIZE 4096 /* 每轮最多向 lwIP 推入的字节数 */
 #define MAX_STRING_SIZE 512
 #define LOG_BUFFER_SIZE 512
 #define READBUFSIZE 2048

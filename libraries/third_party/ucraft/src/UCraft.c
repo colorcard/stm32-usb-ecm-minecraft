@@ -273,12 +273,13 @@ static void s2cHandler()
         {
             /* 下发除 dimension_type / worldgen-biome 外的注册表（已移除那两个需要
              * 完整 NBT 的），再下发标签；dimension/biome 由客户端内置提供。 */
-            ConfigurationS2Cregistry();
-            ConfigurationS2Cupdatetags();
-            ConfigurationS2Cready();
-            currentPlayer->global_buffer_start_index = sendGetGlobalBufferIndex();
-            currentPlayer->ingame = 1;
-            currentPlayer->configuration_known_packs_ack_event = 0;
+            if (ConfigurationS2Cprogress())
+            {
+                ConfigurationS2Cready();
+                currentPlayer->global_buffer_start_index = sendGetGlobalBufferIndex();
+                currentPlayer->ingame = 1;
+                currentPlayer->configuration_known_packs_ack_event = 0;
+            }
         }
 #ifdef ONLINE_MODE
         if (currentPlayer->encryption_event)
