@@ -272,29 +272,23 @@ static void mc_send_login_success(mc_conn_t *c, const char *name)
 }
 
 /**
- * @brief 编码一个 NBT 文本组件 {"text": "..."}（网络 NBT，大端）。
+ * @brief 编码一个 NBT 文本组件：根节点用 TAG_String（纯文本）。
  * @return 写入字节数。
+ * @note 26.x 的 Text Component 接受 字符串/列表/带 type 的对象；这里用最简单的
+ *       字符串形式，避免旧式 {"text":...} 复合对象不匹配。
  */
 static int mc_nbt_put_text(uint8_t *out, const char *text)
 {
   uint16_t n = (uint16_t)strlen(text);
   int o = 0;
 
-  out[o++] = 0x0AU;                     /* TAG_Compound */
-  out[o++] = 0x00U;
-  out[o++] = 0x00U;                     /* 根节点名为空 */
   out[o++] = 0x08U;                     /* TAG_String */
   out[o++] = 0x00U;
-  out[o++] = 0x04U;                     /* 键名长度 = 4 */
-  out[o++] = 't';
-  out[o++] = 'e';
-  out[o++] = 'x';
-  out[o++] = 't';
+  out[o++] = 0x00U;                     /* 根节点名为空 */
   out[o++] = (uint8_t)(n >> 8);
   out[o++] = (uint8_t)(n & 0xFFU);
   (void)memcpy(&out[o], text, n);
   o += (int)n;
-  out[o++] = 0x00U;                     /* TAG_End */
   return o;
 }
 
