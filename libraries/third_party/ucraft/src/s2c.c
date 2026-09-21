@@ -618,22 +618,30 @@ void ConfigurationS2Cupdatetags()
 {
   /* 下发全部原版标签（空条目）。客户端在配置阶段会把未带数据的注册表从内置包
    * 加载，包内数据（维度/附魔/生物群系等）会引用大量原版标签；只要标签存在
-   * （条目可为空）即可通过解析。 */
+   * （条目可为空）即可通过解析。为避免单个包过大耗尽堆，按 CHUNK 个标签分组
+   * 发送（同一注册表可多次下发，标签按名逐条生效）。 */
+  enum { MC_TAG_CHUNK = 16 };
   for (size_t g = 0; g < MC_TAG_GROUP_COUNT; g++)
   {
     const mc_tag_group_t *grp = &mc_tag_groups[g];
-    sendStart();
-    sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
-    sendByte(1);
-    sendString(grp->registry, -1);
-    sendVarInt(grp->count);
-    for (uint16_t i = 0; i < grp->count; i++)
+    for (uint16_t i = 0; i < grp->count; i += MC_TAG_CHUNK)
     {
-      sendString(grp->tags[i], -1);
-      sendByte(0);
+      uint16_t n = grp->count - i;
+      if (n > MC_TAG_CHUNK)
+        n = MC_TAG_CHUNK;
+      sendStart();
+      sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
+      sendByte(1);
+      sendString(grp->registry, -1);
+      sendVarInt(n);
+      for (uint16_t j = 0; j < n; j++)
+      {
+        sendString(grp->tags[i + j], -1);
+        sendByte(0);
+      }
+      sendDone();
+      sendDispatch();
     }
-    sendDone();
-    sendDispatch();
   }
 }
 void ConfigurationS2Cready()
