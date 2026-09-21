@@ -9,6 +9,7 @@
 #include "util.h"
 #include "blocks.h"
 #include "mc_registry_names.h"
+#include "mc_tag_names.h"
 
 #ifdef ONLINE_MODE
 #include "mbedtls/base64.h"
@@ -615,58 +616,25 @@ void ConfigurationS2Cregistry()
 }
 void ConfigurationS2Cupdatetags()
 {
-
-  static const char *damage_types_tag[] = {
-      "is_fire",
-      "is_explosion",
-      "bypasses_shield"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
-  sendByte(1);
-  sendString("damage_type", -1);
-  sendVarInt(sizeof(damage_types_tag) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(damage_types_tag) / sizeof(char *)); i++)
+  /* 下发全部原版标签（空条目）。客户端在配置阶段会把未带数据的注册表从内置包
+   * 加载，包内数据（维度/附魔/生物群系等）会引用大量原版标签；只要标签存在
+   * （条目可为空）即可通过解析。 */
+  for (size_t g = 0; g < MC_TAG_GROUP_COUNT; g++)
   {
-    sendString(damage_types_tag[i], -1);
-    sendByte(0);
+    const mc_tag_group_t *grp = &mc_tag_groups[g];
+    sendStart();
+    sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
+    sendByte(1);
+    sendString(grp->registry, -1);
+    sendVarInt(grp->count);
+    for (uint16_t i = 0; i < grp->count; i++)
+    {
+      sendString(grp->tags[i], -1);
+      sendByte(0);
+    }
+    sendDone();
+    sendDispatch();
   }
-  sendDone();
-
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
-  sendByte(1);
-  sendString("block", -1);
-  sendVarInt(1);
-  sendString("infiniburn_overworld", -1);
-  sendByte(0);
-  sendDone();
-
-  static const char *banner_pattern_tag[] = {
-      "pattern_item/creeper",
-      "pattern_item/flower",
-      "pattern_item/skull",
-      "pattern_item/mojang",
-      "pattern_item/skull",
-      "pattern_item/globe",
-      "pattern_item/piglin",
-      "pattern_item/flow",
-      "pattern_item/guster",
-      "pattern_item/field_masoned",
-      "pattern_item/bordure_indented"};
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_UPDATE_TAGS);
-  sendByte(1);
-  sendString("banner_pattern", -1);
-  sendVarInt(sizeof(banner_pattern_tag) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(banner_pattern_tag) / sizeof(char *)); i++)
-  {
-    sendString(banner_pattern_tag[i], -1);
-    sendByte(0);
-  }
-  sendDone();
-
-  /* 26.3 新增 timeline 注册表；未下发该注册表时，其标签会报 Missing registry，
-   * 故此处不再发送 timeline 标签。 */
 }
 void ConfigurationS2Cready()
 {
