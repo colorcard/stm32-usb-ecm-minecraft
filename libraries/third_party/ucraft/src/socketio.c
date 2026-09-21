@@ -580,6 +580,13 @@ void sendPlayPacketHeader(size_t id)
 }
 void sendConfigurationPacketHeader(size_t id)
 {
+  /* 26.3(协议 777) 在 clientbound 配置阶段 0x0A 处插入了 POST_EFFECTS，
+   * 使 >=0x0A 的包 ID 整体 +1（否则 features 会被客户端当成 transfer）。 */
+  if ((sendPacketVars.player != NULL) && (sendPacketVars.player->protocol >= 777) &&
+      (id >= 0x0A) && (id < S2C_CONFIGURATION_MAPPING_LEN))
+  {
+    id += 1;
+  }
   if (id < S2C_CONFIGURATION_MAPPING_LEN)
   {
     sendByte(id);
