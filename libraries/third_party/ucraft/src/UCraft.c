@@ -100,6 +100,11 @@ static void c2sHandler(readPacketVars_t *readPacketValue)
                     continue;
                 }
                 readString((char *)currentPlayer->name, sizeof(((player_t *)0)->name));
+                if (currentPlayer->protocol >= 764)
+                {
+                    uint8_t uuid_skip[16];
+                    readBuffer((char *)uuid_skip, sizeof(uuid_skip)); // Player UUID (1.20.2+)
+                }
                 // check the player name
                 if (playerCheckName(currentPlayer))
                 {

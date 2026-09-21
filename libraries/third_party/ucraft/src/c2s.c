@@ -80,6 +80,7 @@ static void PlayC2S_client_information(player_t *currentPlayer)
     readVarInt();                           // Main Hand
     readByte();                             // Disable Text Filter
     readByte();                             // Allow server listing
+    readVarInt();                           // Particle Status (1.21.2+)
     currentPlayer->settings_changed_event = 1;
 }
 static void PlayC2S_command_suggestion(player_t *currentPlayer) {}
@@ -306,6 +307,7 @@ static void ConfigurationC2S_client_information(player_t *currentPlayer)
     readVarInt();                           // Main Hand
     readByte();                             // Disable Text Filter
     readByte();                             // Allow server listing
+    readVarInt();                           // Particle Status (1.21.2+)
     currentPlayer->settings_changed_event = 1;
 }
 static void ConfigurationC2S_cookie_response(player_t *currentPlayer) {}
