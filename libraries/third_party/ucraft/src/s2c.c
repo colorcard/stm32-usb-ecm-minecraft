@@ -610,6 +610,7 @@ void ConfigurationS2Cregistry()
       sendByte(0);
     }
     sendDone();
+    sendDispatch(); /* 逐条 flush，避免发送缓冲累积到十几 KB 导致堆分配失败 */
   }
 }
 void ConfigurationS2Cupdatetags()
