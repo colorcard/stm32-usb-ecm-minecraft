@@ -1,6 +1,6 @@
 /**
  * @file lcd_font5x7.h
- * @brief 5x7 点阵字库（ASCII 32..90），由 tools/gen_lcd_font.py 生成。
+ * @brief 5x7 点阵字库（ASCII 32..90），由 scripts/gen_lcd_font.py 生成。
  * @note 每字符 7 行，每行低 5 位有效（bit4 在左）。
  */
 #ifndef _LCD_FONT5X7_H_
