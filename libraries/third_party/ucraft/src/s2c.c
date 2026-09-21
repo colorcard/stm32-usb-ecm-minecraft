@@ -595,28 +595,9 @@ void ConfigurationS2Cknownpacks()
 
 void ConfigurationS2Cregistry()
 {
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("dimension_type", -1);
-  sendVarInt(1);
-  sendString("overworld", -1);
-  sendByte(0);
-  sendDone();
+  /* dimension_type 需完整 NBT，交由客户端内置注册表提供。 */
 
-  static const char *biomes[] = {
-      "plains",
-      "snowy_taiga",
-  };
-  sendStart();
-  sendConfigurationPacketHeader(S2C_CONFIGURATION_REGISTRY_DATA);
-  sendString("worldgen/biome", -1);
-  sendVarInt(sizeof(biomes) / sizeof(char *));
-  for (size_t i = 0; i < (size_t)(sizeof(biomes) / sizeof(char *)); i++)
-  {
-    sendString(biomes[i], -1);
-    sendByte(0);
-  }
-  sendDone();
+  /* worldgen/biome 需完整 NBT，交由客户端内置注册表提供。 */
 
   static const char *damage_types[] = {
       "arrow",

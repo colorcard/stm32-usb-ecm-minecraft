@@ -271,9 +271,9 @@ static void s2cHandler()
         }
         if (currentPlayer->configuration_known_packs_ack_event)
         {
-            /* 26.3 客户端要求动态注册表条目带完整 NBT；UCraft 的“仅名字”数据会被
-             * 判为解析失败。这里不下发注册表，让客户端使用其内置注册表（含完整数据），
-             * 仅下发标签以满足组件初始化。 */
+            /* 下发除 dimension_type / worldgen-biome 外的注册表（已移除那两个需要
+             * 完整 NBT 的），再下发标签；dimension/biome 由客户端内置提供。 */
+            ConfigurationS2Cregistry();
             ConfigurationS2Cupdatetags();
             ConfigurationS2Cready();
             currentPlayer->global_buffer_start_index = sendGetGlobalBufferIndex();
