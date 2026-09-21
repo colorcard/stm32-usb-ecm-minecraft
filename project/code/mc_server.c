@@ -21,6 +21,15 @@
 #define MC_ST_STATUS     1U
 #define MC_ST_LOGIN      2U
 
+/** @brief 1.20.2(764)+ 登录成功后进入配置阶段。 */
+#define MC_PROTO_CONFIG       764U
+/** @brief 26.2(776)+ 的 Login Success 追加 Session ID(UUID)。 */
+#define MC_PROTO_SESSION_ID   776U
+/** @brief 配置阶段 clientbound Disconnect 的包 ID。 */
+#define MC_CFG_DISCONNECT_ID  0x02U
+/** @brief 登录阶段 serverbound Login Acknowledged 的包 ID。 */
+#define MC_LOGIN_ACK_ID       0x03U
+
 /** @brief 单条连接上下文。 */
 typedef struct
 {
@@ -250,6 +259,32 @@ static void mc_send_login_success(mc_conn_t *c, const char *name)
   }
   o += mc_put_string(&out[o], name);
   out[o++] = 0x00U;                 /* properties 数组长度 = 0 */
+  if (c->protocol >= MC_PROTO_SESSION_ID) {
+    /* 26.2+ 新增 Session ID（UUID）；离线演示用全 0。 */
+    uint32_t k;
+    for (k = 0U; k < 16U; ++k) {
+      out[o++] = 0x00U;
+    }
+  }
+  mc_send(c, out, (uint16_t)o);
+}
+
+/**
+ * @brief 在配置阶段发送 Disconnect（优雅提示，随后关闭连接）。
+ */
+static void mc_send_config_disconnect(mc_conn_t *c, const char *text)
+{
+  uint8_t out[192];
+  char json[160];
+  int jl;
+  int o = 0;
+
+  jl = snprintf(json, sizeof(json), "{\"text\":\"%s\"}", text);
+  if (jl <= 0) {
+    return;
+  }
+  out[o++] = MC_CFG_DISCONNECT_ID;
+  o += mc_put_string(&out[o], json);
   mc_send(c, out, (uint16_t)o);
 }
 
@@ -319,6 +354,12 @@ static void mc_handle_packet(mc_conn_t *c, const uint8_t *p, uint32_t len)
         s_last_player[sizeof(s_last_player) - 1U] = '\0';
         mc_send_login_success(c, name);
       }
+    } else if (id == MC_LOGIN_ACK_ID) {
+      /* 客户端确认登录成功：本服务器不载入世界，直接优雅断开。 */
+      if (c->protocol >= MC_PROTO_CONFIG) {
+        mc_send_config_disconnect(c, "STM32 demo server: login OK, no world");
+      }
+      mc_conn_close(c);
     }
     return;
   }
