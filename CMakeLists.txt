@@ -165,6 +165,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     # Minecraft Java 协议服务器
     ${CMAKE_SOURCE_DIR}/project/code/mc_server.c
+
+    # LCD 服务器信息显示
+    ${CMAKE_SOURCE_DIR}/project/code/server_display.c
 )
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/libraries/net

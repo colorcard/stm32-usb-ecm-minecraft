@@ -34,6 +34,11 @@ typedef struct
 
 static struct tcp_pcb *s_listen;
 static mc_conn_t s_conn[MC_MAX_CONN];
+/** @brief 运行统计：当前活动连接数与累计连接数。 */
+static volatile uint32_t s_active_conns;
+static volatile uint32_t s_total_conns;
+/** @brief 最近一个登录玩家的名字（离线模式）。 */
+static char s_last_player[32];
 
 /* ------------------------------ VarInt 工具 ------------------------------ */
 
@@ -80,7 +85,12 @@ static int mc_varint_decode(const uint8_t *p, uint32_t max, uint32_t *value)
 
 static void mc_conn_close(mc_conn_t *c)
 {
-  c->in_use = 0U;
+  if (c->in_use != 0U) {
+    c->in_use = 0U;
+    if (s_active_conns != 0U) {
+      s_active_conns--;
+    }
+  }
   c->len = 0U;
   c->state = MC_ST_HANDSHAKE;
   if (c->pcb != NULL) {
@@ -305,6 +315,8 @@ static void mc_handle_packet(mc_conn_t *c, const uint8_t *p, uint32_t len)
     if (id == 0x00U) {
       char name[32];
       if (mc_get_string(p, len, name, sizeof(name)) > 0) {
+        (void)memcpy(s_last_player, name, sizeof(s_last_player));
+        s_last_player[sizeof(s_last_player) - 1U] = '\0';
         mc_send_login_success(c, name);
       }
     }
@@ -386,7 +398,12 @@ static void mc_err(void *arg, err_t err)
   (void)err;
   if (c != NULL) {
     c->pcb = NULL;                  /* 协议栈已释放 pcb */
-    c->in_use = 0U;
+    if (c->in_use != 0U) {
+      c->in_use = 0U;
+      if (s_active_conns != 0U) {
+        s_active_conns--;
+      }
+    }
     c->len = 0U;
     c->state = MC_ST_HANDSHAKE;
   }
@@ -408,6 +425,8 @@ static err_t mc_accept(void *arg, struct tcp_pcb *newpcb, err_t err)
       c->pcb = newpcb;
       c->state = MC_ST_HANDSHAKE;
       c->in_use = 1U;
+      s_active_conns++;
+      s_total_conns++;
       tcp_arg(newpcb, c);
       tcp_recv(newpcb, mc_recv);
       tcp_err(newpcb, mc_err);
@@ -446,4 +465,19 @@ rp_status_t mc_server_init(void)
 void mc_server_poll(void)
 {
   /* 目前无需周期动作；保留接口便于后续加超时回收。 */
+}
+
+uint32_t mc_server_active_conns(void)
+{
+  return s_active_conns;
+}
+
+uint32_t mc_server_total_conns(void)
+{
+  return s_total_conns;
+}
+
+const char *mc_server_last_player(void)
+{
+  return (s_last_player[0] != '\0') ? s_last_player : "-";
 }

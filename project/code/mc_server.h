@@ -23,6 +23,24 @@ rp_status_t mc_server_init(void);
  */
 void mc_server_poll(void);
 
+/**
+ * @brief 当前活动连接数。
+ * @return 连接数。
+ */
+uint32_t mc_server_active_conns(void);
+
+/**
+ * @brief 累计接受的连接数。
+ * @return 连接数。
+ */
+uint32_t mc_server_total_conns(void);
+
+/**
+ * @brief 最近一次登录握手的玩家名（无则为 "-"）。
+ * @return 只读字符串。
+ */
+const char *mc_server_last_player(void);
+
 #ifdef __cplusplus
 }
 #endif

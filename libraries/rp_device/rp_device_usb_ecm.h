@@ -50,6 +50,12 @@ int usb_ecm_send(const uint8_t *data, uint16_t length);
  */
 void rp_usb_ecm_on_rx(const uint8_t *data, uint32_t len);
 
+/**
+ * @brief USB 设备是否已完成配置（枚举成功）。
+ * @return 1 表示已配置，0 表示未配置。
+ */
+int usb_ecm_is_configured(void);
+
 #ifdef __cplusplus
 }
 #endif

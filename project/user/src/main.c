@@ -2,6 +2,7 @@
 #include "rp_device_usb_ecm.h"
 #include "rp_lwip.h"
 #include "mc_server.h"
+#include "server_display.h"
 
 /**
  * @brief 应用入口。
@@ -24,10 +25,12 @@ int main(void)
   (void)usb_ecm_init();
   (void)rp_lwip_init();
   (void)mc_server_init();
+  server_display_init();
 
   while (1) {
     rp_lwip_poll();
     mc_server_poll();
+    server_display_poll();
 
 #if (BSP_ENABLE_IWDG != 0U)
     iwdg_feed();

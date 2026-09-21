@@ -147,3 +147,8 @@ void usb_ecm_irq_handler(void)
 {
   HAL_PCD_IRQHandler(&hpcd_USB_FS);
 }
+
+int usb_ecm_is_configured(void)
+{
+  return (hUsbDeviceEcm.dev_state == USBD_STATE_CONFIGURED) ? 1 : 0;
+}

@@ -48,6 +48,8 @@
 #define DHCPACK             5U
 
 static struct udp_pcb *s_pcb;
+/** @brief 是否已成功分配租约（收到过 REQUEST）。 */
+static volatile uint8_t s_lease_active;
 
 static void dhcpd_put_ip(uint8_t *p, uint8_t a, uint8_t b, uint8_t c,
                          uint8_t d)
@@ -205,6 +207,7 @@ static void dhcpd_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p,
     dhcpd_send_reply(pcb, buf, DHCPOFFER);
   } else if (mt[0] == DHCPREQUEST) {
     dhcpd_send_reply(pcb, buf, DHCPACK);
+    s_lease_active = 1U;
   }
 }
 
@@ -222,4 +225,9 @@ int rp_dhcpd_init(void)
   ip_set_option(s_pcb, SOF_BROADCAST);
   udp_recv(s_pcb, dhcpd_recv, NULL);
   return 0;
+}
+
+int rp_dhcpd_lease_active(void)
+{
+  return (s_lease_active != 0U) ? 1 : 0;
 }

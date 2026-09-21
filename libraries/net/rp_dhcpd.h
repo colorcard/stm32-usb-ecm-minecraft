@@ -17,6 +17,12 @@ extern "C" {
  */
 int rp_dhcpd_init(void);
 
+/**
+ * @brief 是否已成功向宿主分配地址（收到过 REQUEST 并回 ACK）。
+ * @return 1 表示已分配，0 表示尚未。
+ */
+int rp_dhcpd_lease_active(void);
+
 #ifdef __cplusplus
 }
 #endif
